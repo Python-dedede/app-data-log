@@ -2,22 +2,17 @@ import com.alibaba.druid.pool.DruidDataSourceFactory;
 import com.chinamcloud.bigdata.appDataLog.AppDataLog2Mysql;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 
 
 import javax.sql.DataSource;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 
 /**
  * @Classname TestDemo
@@ -88,7 +83,7 @@ public class TestDemo {
         }*/
 
 
-        InputStream inputStream = AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("druidConf.properties");
+        InputStream inputStream = AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("devDataBase.properties");
         Properties pp = new Properties();
         pp.load(inputStream);
         //创建连接池，使用配置文件中的参数

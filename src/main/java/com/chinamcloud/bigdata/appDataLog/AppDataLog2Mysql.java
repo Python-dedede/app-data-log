@@ -42,7 +42,7 @@ public class AppDataLog2Mysql {
         kafkaConsumer.subscribe(Arrays.asList("app-spread-log"));
 
         /** 将数据插入mysql */
-        InputStream inputStream=AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("druidConf.properties");
+        InputStream inputStream=AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("devDataBase.properties");
         Properties pp = new Properties();
         pp.load(inputStream);
 
