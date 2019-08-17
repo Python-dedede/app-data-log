@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -83,7 +84,7 @@ public class TestDemo {
         }*/
 
 
-        InputStream inputStream = AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("devDataBase.properties");
+        /*InputStream inputStream = AppDataLog2Mysql.class.getClassLoader().getResourceAsStream("devDataBase.properties");
         Properties pp = new Properties();
         pp.load(inputStream);
         //创建连接池，使用配置文件中的参数
@@ -104,9 +105,72 @@ public class TestDemo {
         }
 
         st.close();
-        con.close();
+        con.close();*/
+
+        String logStr = "{\"ip\":\"223.104.186.174\",\"record\":\"POST /collector HTTP/1.1\\r\\nHost: 47.94.90.194:8089\\r\\nContent-Type: application/json;encoding=utf-8\\r\\nConnection: keep-alive\\r\\nAccept: */*\\r\\nUser-Agent: %E5%A4%A9%E4%B8%8B%E6%B3%89%E5%9F%8E/1 CFNetwork/758.2.8 Darwin/15.0.0\\r\\nContent-Length: 539\\r\\nAccept-Language: zh-cn\\r\\nAccept-Encoding: gzip, deflate\\r\\n\\r\\n{\\\"version\\\":\\\"\\\",\\\"secret\\\":\\\"\\\",\\\"body\\\":{\\\"longitude\\\":\\\"117.02\\\",\\\"deviceId\\\":\\\"0f39f67aa78ba52af4ca43f63bcca35b36a1d5a3\\\",\\\"latitude\\\":\\\"36.66\\\",\\\"tenantId\\\":\\\"jntv\\\",\\\"userId\\\":\\\"89003\\\",\\\"salt\\\":\\\"27056B13-5278-4185-96BE-9CCF814DB16F\\\",\\\"platform\\\":\\\"ios\\\",\\\"eventId\\\":\\\"onAp\",\"receiveTs\":\"1565999567079\"}";
+        HashMap<String, String> hm = new HashMap<String, String>(5);
+        parse(logStr, hm);
+    }
+
+    /**
+     * 解析字段值
+     */
+    private static void parse(String logStr, Map<String, String> valMap) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        Map map = mapper.readValue(logStr, Map.class); // logMap
+        Object record = map.get("record");
+        try {
+            Map recordMap = mapper.readValue(record.toString(), Map.class); // recordMap
+
+            Map bodyMap = (Map<String, Object>) recordMap.get("body");  // bodyMap
+
+            String type = "";
+            String articleId = "";
+            String catalogId = "";
+            String device = "";
+            String eventId = "";
+
+            // 定义需要提取的字段值
+            eventId = null == bodyMap.get("eventId") ? "-" : bodyMap.get("eventId").toString();
+
+            Map dataMap = (Map<String, Object>) bodyMap.get("data");
+            if (null == dataMap) { // 没有dataMap
+                articleId = "-";
+                catalogId = "-";
+                device = "-";
+                type = "-";
+            } else { // 都可以从dataMap取值的字段
+                articleId = null == dataMap.get("articleId") ? "-" : dataMap.get("articleId").toString();
+                catalogId = null == dataMap.get("catalogId") ? "-" : dataMap.get("catalogId").toString();
+                device = null == dataMap.get("device") ? "-" : dataMap.get("device").toString();
+            }
+            Object vData = dataMap.get("vData");
+            if (null == vData) { //没有vData
+                type = "-";
+            } else {
+                try {
+                    Map vDataMap = mapper.readValue(vData.toString(), Map.class);
+                    type = null == vDataMap.get("type") ? "-" : vDataMap.get("type").toString();
+                    articleId = null == vDataMap.get("articleId") ? "-" : vDataMap.get("articleId").toString(); // 有vData的，articleId,catalogId在这层里面
+                    catalogId = null == vDataMap.get("catalogId") ? "-" : vDataMap.get("catalogId").toString();
+                } catch (JsonParseException e) { // vData是一个map对象
+                    Map vDataMap2 = (Map<String, Object>) vData;
+                    type = null == vDataMap2.get("type") ? "-" : vDataMap2.get("type").toString();
+                    articleId = null == vDataMap2.get("articleId") ? "-" : vDataMap2.get("articleId").toString();
+                    catalogId = null == vDataMap2.get("catalogId") ? "-" : vDataMap2.get("catalogId").toString();
+                }
+            }
 
 
+            valMap.put("type", type);
+            valMap.put("articleId", articleId);
+            valMap.put("catalogId", catalogId);
+            valMap.put("device", device);
+            valMap.put("eventId", eventId);
+
+        } catch (JsonParseException e) {
+            logger.error(e.getMessage());
+        }
     }
 
 

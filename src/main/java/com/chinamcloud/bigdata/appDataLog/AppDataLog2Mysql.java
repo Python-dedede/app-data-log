@@ -7,6 +7,8 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.log4j.Logger;
+
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -23,6 +25,8 @@ import java.util.*;
  * @Created by yuhousheng
  */
 public class AppDataLog2Mysql {
+
+    private static Logger logger = Logger.getLogger(AppDataLog2Mysql.class);
 
     public static void main(String[] args) throws Exception {
 
@@ -201,57 +205,65 @@ public class AppDataLog2Mysql {
 
 
     /**
-     *  解析字段值
+     * 解析字段值
      */
-    private static void parse(String logStr,Map<String,String> valMap) throws IOException {
+    private static void parse(String logStr, Map<String, String> valMap) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         Map map = mapper.readValue(logStr, Map.class); // logMap
         Object record = map.get("record");
-        Map recordMap = mapper.readValue(record.toString(), Map.class); // recordMap
-        Map bodyMap = (Map<String, Object>) recordMap.get("body");  // bodyMap
+        try {
+            Map recordMap = mapper.readValue(record.toString(), Map.class); // recordMap
 
-        String type = "";
-        String articleId = "";
-        String catalogId = "";
-        String device = "";
-        String eventId = "";
+            Map bodyMap = (Map<String, Object>) recordMap.get("body");  // bodyMap
 
-        // 定义需要提取的字段值
-        eventId = null==bodyMap.get("eventId")?"-":bodyMap.get("eventId").toString();
+            String type = "";
+            String articleId = "";
+            String catalogId = "";
+            String device = "";
+            String eventId = "";
 
-        Map dataMap = (Map<String, Object>) bodyMap.get("data");
-        if (null == dataMap) { // 没有dataMap
-            articleId = "-";
-            catalogId = "-";
-            device = "-";
-            type = "-";
-        } else { // 都可以从dataMap取值的字段
-            articleId = null == dataMap.get("articleId") ? "-" : dataMap.get("articleId").toString();
-            catalogId = null == dataMap.get("catalogId") ? "-" : dataMap.get("catalogId").toString();
-            device = null == dataMap.get("device") ? "-" : dataMap.get("device").toString();
-        }
-        Object vData = dataMap.get("vData");
-        if (null == vData) { //没有vData
-            type = "-";
-        } else {
-            try {
-                Map vDataMap = mapper.readValue(vData.toString(), Map.class);
-                type = null==vDataMap.get("type")?"-":vDataMap.get("type").toString();
-                articleId=null==vDataMap.get("articleId")?"-":vDataMap.get("articleId").toString(); // 有vData的，articleId,catalogId在这层里面
-                catalogId=null==vDataMap.get("catalogId")?"-":vDataMap.get("catalogId").toString();
-            } catch (JsonParseException e) { // vData是一个map对象
-                Map vDataMap2 = (Map<String, Object>) vData;
-                type      = null == vDataMap2.get("type") ?      "-" : vDataMap2.get("type").toString();
-                articleId = null == vDataMap2.get("articleId") ? "-" : vDataMap2.get("articleId").toString();
-                catalogId = null == vDataMap2.get("catalogId") ? "-" : vDataMap2.get("catalogId").toString();
+            // 定义需要提取的字段值
+            eventId = null == bodyMap.get("eventId") ? "-" : bodyMap.get("eventId").toString();
+
+            Map dataMap = (Map<String, Object>) bodyMap.get("data");
+            if (null == dataMap) { // 没有dataMap
+                articleId = "-";
+                catalogId = "-";
+                device = "-";
+                type = "-";
+            } else { // 都可以从dataMap取值的字段
+                articleId = null == dataMap.get("articleId") ? "-" : dataMap.get("articleId").toString();
+                catalogId = null == dataMap.get("catalogId") ? "-" : dataMap.get("catalogId").toString();
+                device = null == dataMap.get("device") ? "-" : dataMap.get("device").toString();
             }
-        }
-        valMap.put("type",type);
-        valMap.put("articleId",articleId);
-        valMap.put("catalogId",catalogId);
-        valMap.put("device",device);
-        valMap.put("eventId",eventId);
-    }
+            Object vData = dataMap.get("vData");
+            if (null == vData) { //没有vData
+                type = "-";
+            } else {
+                try {
+                    Map vDataMap = mapper.readValue(vData.toString(), Map.class);
+                    type = null == vDataMap.get("type") ? "-" : vDataMap.get("type").toString();
+                    articleId = null == vDataMap.get("articleId") ? "-" : vDataMap.get("articleId").toString(); // 有vData的，articleId,catalogId在这层里面
+                    catalogId = null == vDataMap.get("catalogId") ? "-" : vDataMap.get("catalogId").toString();
+                } catch (JsonParseException e) { // vData是一个map对象
+                    Map vDataMap2 = (Map<String, Object>) vData;
+                    type = null == vDataMap2.get("type") ? "-" : vDataMap2.get("type").toString();
+                    articleId = null == vDataMap2.get("articleId") ? "-" : vDataMap2.get("articleId").toString();
+                    catalogId = null == vDataMap2.get("catalogId") ? "-" : vDataMap2.get("catalogId").toString();
+                }
+            }
 
+
+            valMap.put("type", type);
+            valMap.put("articleId", articleId);
+            valMap.put("catalogId", catalogId);
+            valMap.put("device", device);
+            valMap.put("eventId", eventId);
+
+        } catch (JsonParseException e) {
+            System.out.println(" ##Parsing log## "+logStr);
+            System.out.println(" ##erro detail## "+e.getMessage());
+        }
+    }
 
 }

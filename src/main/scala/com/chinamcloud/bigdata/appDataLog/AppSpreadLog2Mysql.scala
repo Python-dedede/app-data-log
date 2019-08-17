@@ -44,16 +44,16 @@ object AppSpreadLog2Mysql {
       Subscribe[String, String](topics, kafkaParamMap)
     )
 
-    val value: DStream[String] = valueStream.map(_.value())
-    value.print()
+    val value: DStream[String] = valueStream.map(_.value()) // 只要日志
 
-
+    value.foreachRDD(rdd => { // 触发spark-streaming计算
+      rdd.foreachPartition( x => {
+        // 对日志进行业务逻辑操作
+      })
+    })
 
     context.start()
     context.awaitTermination()
-
-
-
 
   }
 
